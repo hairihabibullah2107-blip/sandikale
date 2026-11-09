@@ -42,12 +42,27 @@ jobs:
       - name: Test synchronization logic
         run: npm run test:sync
 
+      - name: Validate Supabase configuration
+        run: |
+          if [ "$VITE_SUPABASE_URL" != "https://jkiuvpcicgjzcifxqfvp.supabase.co" ]; then
+            echo "::error::VITE_SUPABASE_URL kosong atau bukan URL project SANDIKALE yang benar."
+            exit 1
+          fi
+          case "$VITE_SUPABASE_ANON_KEY" in
+            sb_publishable_*) ;;
+            *) echo "::error::VITE_SUPABASE_ANON_KEY tidak berisi Supabase Publishable Key (sb_publishable_...)."; exit 1 ;;
+          esac
+          echo "Konfigurasi Supabase valid: URL cocok dan Publishable Key terisi."
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
+
       - name: Build application
         run: npm run build
         env:
           VITE_BASE: /sandikale/
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
