@@ -1,0 +1,120 @@
+@import url('https://api.fontshare.com/v2/css?f[]=panchang@600,700,800,900&display=swap');
+/* Tema Terang Lembut & Krem Hangat (dihasilkan oleh tools/gen_themes.py) */
+@import './themes.generated.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.font-panchang {
+  font-family: 'Panchang', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #0c0e14;
+    color: #e2e8f0;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Animations for loading and success */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(225, 29, 72, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(225, 29, 72, 0.5);
+  }
+}
+
+.animate-glow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #11141d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252b3b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #384259;
+}
+
+/* Thermal POS Printer Styles */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #thermal-receipt-print,
+  #thermal-receipt-print *,
+  #spk-production-sheet,
+  #spk-production-sheet * {
+    visibility: visible !important;
+  }
+
+  #thermal-receipt-print {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 58mm !important;
+    margin: 0 !important;
+    padding: 2mm !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+  }
+
+  #spk-production-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 8mm !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+@layer base { *, ::before, ::after { border-color: currentColor; } }
+:root { color-scheme: dark; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html, body, #root { height: 100%; margin: 0; background: #0c0e14; }
+#root > div { height: 100% !important; }
+body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+button, [role=button], a, label { touch-action: manipulation; }
+@media (max-width: 640px) { input, select, textarea { font-size: 16px !important; } }
