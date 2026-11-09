@@ -380,7 +380,7 @@ export const InventoryView: React.FC = () => {
                             <Printer className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => openEdit(prod)
+                            onClick={() => openEdit(prod)}
                             className="p-1.5 rounded-lg bg-[#1c2232] hover:bg-[#252e42] text-slate-300 border border-[#273248] cursor-pointer ml-1"
                             title="Edit Produk"
                           >
