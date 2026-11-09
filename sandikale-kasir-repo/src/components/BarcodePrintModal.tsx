@@ -61,10 +61,6 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
     [printableProducts, copies]
   );
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-3 sm:p-6">
       <style>{`
@@ -80,13 +76,14 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
           #barcode-print-root, #barcode-print-root * { visibility: visible !important; }
           #barcode-print-root { position: absolute !important; inset: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; background: #fff !important; padding: 0 !important; margin: 0 !important; }
           .barcode-print-controls { display: none !important; }
-          .barcode-print-grid { ${paper === 'A4' ? `display: grid; grid-template-columns: repeat(3, ${selectedPaper.width}mm); gap: 1.5mm;` : 'display: block;'} }\n          ${paper === 'A4' ? '' : '.barcode-print-label { break-after: page; } .barcode-print-label:last-child { break-after: auto; }'}
+          .barcode-print-grid { ${paper === 'A4' ? `display: grid; grid-template-columns: repeat(3, ${selectedPaper.width}mm); gap: 1.5mm;` : 'display: block;'} }
+          ${paper === 'A4' ? '' : '.barcode-print-label { break-after: page; } .barcode-print-label:last-child { break-after: auto; }'}
           .barcode-print-label { border: none; }
         }
       `}</style>
 
       <div id="barcode-print-root" className="w-full max-w-5xl max-h-[95vh] overflow-auto bg-white text-slate-900 rounded-2xl shadow-2xl">
-        <div className="barcode-print-controls" className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-900 text-white rounded-t-2xl">
+        <div className="barcode-print-controls sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-900 text-white rounded-t-2xl">
           <div>
             <h3 className="font-bold text-base">Cetak Label Barcode</h3>
             <p className="text-xs text-slate-300">{printableProducts.length} produk siap cetak · {labels.length} label</p>
@@ -94,7 +91,7 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-700" aria-label="Tutup"><X size={18} /></button>
         </div>
 
-        <div id="barcode-print-controls" className="p-4 flex flex-wrap gap-3 items-end border-b border-slate-200">
+        <div className="barcode-print-controls p-4 flex flex-wrap gap-3 items-end border-b border-slate-200">
           <label className="text-xs font-semibold flex flex-col gap-1">
             Ukuran kertas / label
             <select value={paper} onChange={(event) => setPaper(event.target.value as PaperMode)} className="border border-slate-300 rounded-lg px-3 py-2 bg-white">
@@ -109,22 +106,27 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
             <input type="checkbox" checked={showPrice} onChange={(event) => setShowPrice(event.target.checked)} />
             Tampilkan harga jual
           </label>
-          <button onClick={handlePrint} className="ml-auto inline-flex items-center gap-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm px-4 py-2.5">
+          <button onClick={() => window.print()} className="ml-auto inline-flex items-center gap-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm px-4 py-2.5">
             <Printer size={16} /> Cetak
           </button>
         </div>
 
         <div className="p-4 overflow-auto">
-          {missingBarcodeCount > 0 && <p className="mb-3 text-xs text-amber-700">{missingBarcodeCount} produk dilewati karena belum memiliki barcode.</p>}\n          {printableProducts.length === 0 ? <p className="text-sm text-slate-600">Tidak ada produk dengan barcode yang bisa dicetak.</p> : <div className="barcode-print-grid">
-            {labels.map(({ product, key }) => (
-              <div className="barcode-print-label" key={key}>
-                <div className="barcode-print-name">{product.name}</div>
-                {product.barcode ? <BarcodeCanvas value={product.barcode} /> : <div className="text-xs text-red-600">Barcode belum diisi</div>}
-                <div className="barcode-print-code">{product.barcode || '—'}</div>
-                {showPrice && <div className="barcode-print-price">Rp {product.sellingPrice.toLocaleString('id-ID')}</div>}
-              </div>
-            ))}
-          </div>
+          {missingBarcodeCount > 0 && <p className="mb-3 text-xs text-amber-700">{missingBarcodeCount} produk dilewati karena belum memiliki barcode.</p>}
+          {printableProducts.length === 0 ? (
+            <p className="text-sm text-slate-600">Tidak ada produk dengan barcode yang bisa dicetak.</p>
+          ) : (
+            <div className="barcode-print-grid">
+              {labels.map(({ product, key }) => (
+                <div className="barcode-print-label" key={key}>
+                  <div className="barcode-print-name">{product.name}</div>
+                  <BarcodeCanvas value={product.barcode} />
+                  <div className="barcode-print-code">{product.barcode}</div>
+                  {showPrice && <div className="barcode-print-price">Rp {product.sellingPrice.toLocaleString('id-ID')}</div>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
