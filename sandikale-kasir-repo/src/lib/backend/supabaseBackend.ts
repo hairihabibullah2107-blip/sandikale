@@ -88,9 +88,16 @@ const TABLES: Record<TableName, TableMap> = {
 };
 
 export function normalizeUsername(u: string): string {
-  return u.trim().toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '');
+  return u.trim().toLowerCase().replace(/\\s+/g, '.').replace(/[^a-z0-9._-]/g, '');
 }
 const toEmail = (username: string) => `${normalizeUsername(username)}@sandikale.id`;
+
+// Akun admin pertama sudah terdaftar di Supabase Auth memakai Gmail.
+// Username aplikasi tetap "hairi"; akun baru lainnya tetap memakai domain internal.
+const toLoginEmail = (username: string) =>
+  normalizeUsername(username) === 'hairi'
+    ? 'hairihabibullah2107@gmail.com'
+    : toEmail(username);
 
 function toError(err: any): BackendError {
   const code = String(err?.code ?? '');
@@ -155,7 +162,7 @@ export async function createSupabaseBackend(url: string, anonKey: string): Promi
       return p && p.active !== false ? p : null;
     },
     async signIn(username, pin) {
-      const { data, error } = await client.auth.signInWithPassword({ email: toEmail(username), password: pin });
+      const { data, error } = await client.auth.signInWithPassword({ email: toLoginEmail(username), password: pin });
       if (error || !data?.user) {
         return { error: /invalid login/i.test(error?.message || '') ? 'Username atau PIN tidak sesuai.' : error?.message || 'Gagal masuk.' };
       }
