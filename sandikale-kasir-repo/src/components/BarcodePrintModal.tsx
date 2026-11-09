@@ -75,6 +75,7 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
           body * { visibility: hidden !important; }
           #barcode-print-root, #barcode-print-root * { visibility: visible !important; }
           #barcode-print-root { position: absolute !important; inset: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; background: #fff !important; padding: 0 !important; margin: 0 !important; }
+          #barcode-print-root > .p-4 { padding: 0 !important; overflow: visible !important; }
           .barcode-print-controls { display: none !important; }
           .barcode-print-grid { ${paper === 'A4' ? `display: grid; grid-template-columns: repeat(3, ${selectedPaper.width}mm); gap: 1.5mm;` : 'display: block;'} }
           ${paper === 'A4' ? '' : '.barcode-print-label { break-after: page; } .barcode-print-label:last-child { break-after: auto; }'}
