@@ -185,24 +185,34 @@ export async function createSupabaseBackend(url: string, anonKey: string): Promi
       return () => data?.subscription?.unsubscribe?.();
     },
     async createUser(u) {
-      // Klien terpisah (tanpa menyimpan sesi) agar sesi admin tidak tertimpa.
-      const temp: any = createClient(url, anonKey, {
-        auth: { persistSession: false, autoRefreshToken: false, storageKey: 'sandikale-auth-temp' },
+      // Pembuatan akun staf dilakukan server-side agar email konfirmasi tidak
+      // menghalangi login dan sesi admin yang sedang aktif tidak tertimpa.
+      if (u.role !== 'kasir') {
+        return { error: 'Pembuatan akun melalui fungsi ini saat ini hanya mendukung role kasir.' };
+      }
+      const { data, error } = await client.functions.invoke('create-staff', {
+        body: {
+          username: normalizeUsername(u.username),
+          pin: u.pin,
+          name: u.name,
+          phone: u.phone ?? null,
+        },
       });
-      const { data, error } = await temp.auth.signUp({
-        email: toEmail(u.username),
-        password: u.pin,
-        options: { data: { username: normalizeUsername(u.username), name: u.name, phone: u.phone ?? '' } },
-      });
-      if (error) return { error: /already|registered/i.test(error.message) ? 'Username sudah digunakan.' : error.message };
-      const newId: string | undefined = data?.user?.id;
-      if (!newId || (data.user.identities && data.user.identities.length === 0)) return { error: 'Username sudah digunakan.' };
-      const { error: upErr } = await client
-        .from('profiles')
-        .update({ role: u.role, active: true, name: u.name, phone: u.phone ?? null })
-        .eq('id', newId);
-      if (upErr) return { error: upErr.message };
-      return { id: newId };
+      if (error) {
+        const details = (error as any)?.context;
+        let message = error.message || 'Gagal membuat akun kasir.';
+        if (details && typeof details.json === 'function') {
+          try {
+            const payload = await details.json();
+            if (payload?.error) message = payload.error;
+          } catch {
+            // Gunakan pesan bawaan jika respons bukan JSON.
+          }
+        }
+        return { error: message };
+      }
+      if (!data?.id) return { error: data?.error || 'Server tidak mengembalikan ID akun baru.' };
+      return { id: data.id };
     },
     async changeOwnPin(oldPin, newPin) {
       const { error } = await client.rpc('change_my_pin', { p_old: oldPin, p_new: newPin });
