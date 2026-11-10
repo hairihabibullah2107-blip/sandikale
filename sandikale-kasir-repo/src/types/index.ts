@@ -8,6 +8,7 @@ export interface User {
   pin: string;
   phone?: string;
   avatar?: string;
+  active?: boolean;
 }
 
 export type PaymentMethod =

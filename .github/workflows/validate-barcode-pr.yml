@@ -1,0 +1,35 @@
+name: Validate SANDIKALE barcode feature
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'sandikale-kasir-repo/**'
+      - '.github/workflows/validate-barcode-pr.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: sandikale-kasir-repo
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript validation
+        run: npm run lint
+      - name: Sync tests
+        run: npm run test:sync
+      - name: Production build
+        run: npm run build

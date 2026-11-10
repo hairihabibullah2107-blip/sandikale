@@ -9,6 +9,7 @@ import {
   Trash2,
   Edit2,
   Barcode,
+  Printer,
   Layers,
   AlertTriangle,
   X,
@@ -20,6 +21,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { downloadProductsCatalogPdf } from '../utils/pdfExport';
+import { BarcodePrintModal } from './BarcodePrintModal';
 import { compressUploadedImage, CompressedImageResult } from '../utils/imageCompressor';
 
 export const InventoryView: React.FC = () => {
@@ -38,6 +40,7 @@ export const InventoryView: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCat, setSelectedCat] = useState<string>('Semua');
+  const [barcodePrintProducts, setBarcodePrintProducts] = useState<Product[] | null>(null);
 
   // Modal Add / Edit Product
   const [modalOpen, setModalOpen] = useState(false);
@@ -226,6 +229,14 @@ export const InventoryView: React.FC = () => {
             <Download className="w-4 h-4 text-emerald-400" />
             <span>Ekspor PDF</span>
           </button>
+          <button
+            onClick={() => setBarcodePrintProducts(filtered)}
+            disabled={filtered.length === 0}
+            className="px-3.5 py-2 rounded-xl bg-[#1a2030] hover:bg-[#232b40] border border-[#273248] text-slate-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-40"
+          >
+            <Printer className="w-4 h-4 text-amber-300" />
+            <span>Cetak Barcode</span>
+          </button>
           {isAdmin && (
             <button
               onClick={openAdd}
@@ -361,6 +372,13 @@ export const InventoryView: React.FC = () => {
                       {/* Edit (Admin only) */}
                       {isAdmin && (
                         <>
+                          <button
+                            onClick={() => setBarcodePrintProducts([prod])}
+                            className="p-1.5 rounded-lg bg-[#1c2232] hover:bg-[#252e42] text-amber-300 border border-[#273248] cursor-pointer"
+                            title="Cetak Barcode Produk"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             onClick={() => openEdit(prod)}
                             className="p-1.5 rounded-lg bg-[#1c2232] hover:bg-[#252e42] text-slate-300 border border-[#273248] cursor-pointer ml-1"
@@ -611,6 +629,12 @@ export const InventoryView: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {barcodePrintProducts && (
+        <BarcodePrintModal
+          products={barcodePrintProducts}
+          onClose={() => setBarcodePrintProducts(null)}
+        />
       )}
     </div>
   );

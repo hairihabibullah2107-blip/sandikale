@@ -115,6 +115,7 @@ interface AppContextType {
     discountTotal: number;
     paymentMethod: PaymentMethod;
     amountPaid: number;
+    dp?: boolean;
   }) => Promise<Order>;
   voidOrder: (orderId: string, reason: string, adminPin: string) => Promise<{ success: boolean; message?: string }>;
 
