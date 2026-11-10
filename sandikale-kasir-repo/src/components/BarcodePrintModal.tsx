@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BarcodeFormat, EncodeHintType, MultiFormatWriter } from '@zxing/library';
-import { Printer, X } from 'lucide-react';
+import { BarcodeFormat, Code128Writer } from '@zxing/library';
+import { jsPDF } from 'jspdf';
+import { Download, Printer, X } from 'lucide-react';
 import type { Product } from '../types';
 
 type PaperMode = 'A4' | '50x30' | '40x25' | '58x40';
@@ -17,6 +18,25 @@ const PAPER_OPTIONS: { value: PaperMode; label: string; width: number; height: n
   { value: '58x40', label: 'Thermal — 58 × 40 mm', width: 58, height: 40 },
 ];
 
+function createBarcodeCanvas(value: string): HTMLCanvasElement {
+  const matrix = new Code128Writer().encode(value, BarcodeFormat.CODE_128, 660, 150);
+  const canvas = document.createElement('canvas');
+  canvas.width = matrix.getWidth();
+  canvas.height = matrix.getHeight();
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Browser tidak dapat membuat gambar barcode.');
+  context.imageSmoothingEnabled = false;
+  context.fillStyle = '#fff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#000';
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      if (matrix.get(x, y)) context.fillRect(x, y, 1, 1);
+    }
+  }
+  return canvas;
+}
+
 function BarcodeCanvas({ value }: { value: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -24,25 +44,18 @@ function BarcodeCanvas({ value }: { value: string }) {
     const canvas = canvasRef.current;
     if (!canvas || !value) return;
     try {
-      const hints = new Map();
-      hints.set(EncodeHintType.MARGIN, 8);
-      const matrix = new MultiFormatWriter().encode(value, BarcodeFormat.CODE_128, 440, 110, hints);
-      const width = matrix.getWidth();
-      const height = matrix.getHeight();
-      canvas.width = width;
-      canvas.height = height;
+      const generated = createBarcodeCanvas(value);
+      canvas.width = generated.width;
+      canvas.height = generated.height;
       const context = canvas.getContext('2d');
-      if (!context) return;
-      context.fillStyle = '#fff';
-      context.fillRect(0, 0, width, height);
-      context.fillStyle = '#000';
-      for (let y = 0; y < height; y += 1) {
-        for (let x = 0; x < width; x += 1) {
-          if (matrix.get(x, y)) context.fillRect(x, y, 1, 1);
-        }
+      if (context) {
+        context.imageSmoothingEnabled = false;
+        context.drawImage(generated, 0, 0);
       }
     } catch (error) {
       console.error('Gagal membuat barcode:', error);
+      canvas.width = 1;
+      canvas.height = 1;
     }
   }, [value]);
 
@@ -53,6 +66,7 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
   const [paper, setPaper] = useState<PaperMode>('A4');
   const [copies, setCopies] = useState(1);
   const [showPrice, setShowPrice] = useState(true);
+  const [pdfError, setPdfError] = useState('');
   const selectedPaper = PAPER_OPTIONS.find((item) => item.value === paper) || PAPER_OPTIONS[0];
   const printableProducts = useMemo(() => products.filter((product) => product.barcode?.trim()), [products]);
   const missingBarcodeCount = products.length - printableProducts.length;
@@ -61,12 +75,76 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
     [printableProducts, copies]
   );
 
+  const downloadPdf = () => {
+    setPdfError('');
+    if (labels.length === 0) {
+      setPdfError('Tidak ada label barcode yang dapat dibuat.');
+      return;
+    }
+    try {
+      const isA4 = paper === 'A4';
+      const doc = new jsPDF({
+        orientation: isA4 ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: isA4 ? 'a4' : [selectedPaper.width, selectedPaper.height],
+        compress: true,
+      });
+      const margin = 8;
+      const gap = 1.5;
+      const columns = isA4 ? 3 : 1;
+      const rowsPerPage = isA4 ? 7 : 1;
+      const labelsPerPage = columns * rowsPerPage;
+
+      labels.forEach(({ product }, index) => {
+        if (index > 0 && index % labelsPerPage === 0) {
+          if (isA4) doc.addPage('a4', 'portrait');
+        }
+        if (!isA4 && index > 0) doc.addPage([selectedPaper.width, selectedPaper.height], 'landscape');
+
+        const pageIndex = index % labelsPerPage;
+        const column = isA4 ? pageIndex % columns : 0;
+        const row = isA4 ? Math.floor(pageIndex / columns) : 0;
+        const x = isA4 ? margin + column * (selectedPaper.width + gap) : 0;
+        const y = isA4 ? margin + row * (selectedPaper.height + gap) : 0;
+        const w = selectedPaper.width;
+        const h = selectedPaper.height;
+        const inset = isA4 ? 2 : 2.5;
+
+        doc.setTextColor(15, 15, 15);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(isA4 ? 8 : 7);
+        const nameLines = doc.splitTextToSize(product.name || 'Produk SANDIKALE', w - inset * 2);
+        doc.text(nameLines.slice(0, 1), x + w / 2, y + (isA4 ? 5 : 4.5), { align: 'center' });
+
+        const barcodeCanvas = createBarcodeCanvas(product.barcode);
+        const barcodeHeight = isA4 ? 17 : Math.max(8, h * 0.38);
+        const barcodeY = y + (isA4 ? 8 : 7);
+        doc.addImage(barcodeCanvas.toDataURL('image/png'), 'PNG', x + inset, barcodeY, w - inset * 2, barcodeHeight);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(isA4 ? 7 : 6);
+        doc.text(product.barcode, x + w / 2, barcodeY + barcodeHeight + (isA4 ? 3 : 2.5), { align: 'center' });
+
+        if (showPrice) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(isA4 ? 8 : 6);
+          doc.text(`Rp ${Number(product.sellingPrice || 0).toLocaleString('id-ID')}`, x + w / 2, y + h - (isA4 ? 3 : 2), { align: 'center' });
+        }
+      });
+
+      doc.save(`label-barcode-sandikale-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (error) {
+      console.error('Gagal membuat PDF barcode:', error);
+      setPdfError('PDF gagal dibuat. Periksa apakah kode barcode produk menggunakan huruf/angka standar.');
+    }
+  };
+
   return (
     <div id="barcode-print-overlay" className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-3 sm:p-6">
       <style>{`
         .barcode-print-label { box-sizing: border-box; width: ${selectedPaper.width}mm; height: ${selectedPaper.height}mm; padding: 2mm; overflow: hidden; background: #fff; color: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1mm; border: 1px dashed #ddd; break-inside: avoid; }
         .barcode-print-name { width: 100%; font: 700 9pt Arial, sans-serif; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        .barcode-print-image { display: block; width: 92%; height: auto; max-height: 55%; object-fit: contain; }
+        .barcode-print-image { display: block; flex: 0 0 auto; width: 92%; height: 18mm; max-height: none; object-fit: fill; image-rendering: pixelated; }
         .barcode-print-code { font: 8pt monospace; letter-spacing: .5px; text-align: center; }
         .barcode-print-price { font: 700 9pt Arial, sans-serif; }
         .barcode-print-grid { display: grid; grid-template-columns: repeat(3, ${selectedPaper.width}mm); gap: 1.5mm; align-content: start; justify-content: start; }
@@ -108,12 +186,16 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
             <input type="checkbox" checked={showPrice} onChange={(event) => setShowPrice(event.target.checked)} />
             Tampilkan harga jual
           </label>
+          <button onClick={downloadPdf} className="inline-flex items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm px-4 py-2.5">
+            <Download size={16} /> Unduh PDF
+          </button>
           <button onClick={() => window.print()} className="ml-auto inline-flex items-center gap-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm px-4 py-2.5">
             <Printer size={16} /> Cetak
           </button>
         </div>
 
         <div className="p-4 overflow-auto">
+          {pdfError && <p role="alert" className="mb-3 text-xs text-red-700">{pdfError}</p>}
           {missingBarcodeCount > 0 && <p className="mb-3 text-xs text-amber-700">{missingBarcodeCount} produk dilewati karena belum memiliki barcode.</p>}
           {printableProducts.length === 0 ? (
             <p className="text-sm text-slate-600">Tidak ada produk dengan barcode yang bisa dicetak.</p>
