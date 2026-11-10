@@ -1,0 +1,43 @@
+name: Validate barcode feature branch
+
+on:
+  push:
+    branches:
+      - feature/print-barcode-labels
+
+permissions:
+  contents: read
+
+concurrency:
+  group: barcode-feature-check
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: sandikale-kasir-repo
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript check
+        run: npm run lint
+
+      - name: Sync tests
+        run: npm run test:sync
+
+      - name: Production build (no deployment)
+        run: npm run build
+        env:
+          VITE_BASE: /sandikale/
