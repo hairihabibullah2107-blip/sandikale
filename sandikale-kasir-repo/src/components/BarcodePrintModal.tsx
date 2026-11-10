@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BarcodeFormat, Code128Writer } from '@zxing/library';
+import JsBarcode from 'jsbarcode';
 import { jsPDF } from 'jspdf';
 import { Download, Printer, X } from 'lucide-react';
 import type { Product } from '../types';
@@ -19,21 +19,16 @@ const PAPER_OPTIONS: { value: PaperMode; label: string; width: number; height: n
 ];
 
 function createBarcodeCanvas(value: string): HTMLCanvasElement {
-  const matrix = new Code128Writer().encode(value, BarcodeFormat.CODE_128, 660, 150);
   const canvas = document.createElement('canvas');
-  canvas.width = matrix.getWidth();
-  canvas.height = matrix.getHeight();
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Browser tidak dapat membuat gambar barcode.');
-  context.imageSmoothingEnabled = false;
-  context.fillStyle = '#fff';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = '#000';
-  for (let y = 0; y < canvas.height; y += 1) {
-    for (let x = 0; x < canvas.width; x += 1) {
-      if (matrix.get(x, y)) context.fillRect(x, y, 1, 1);
-    }
-  }
+  JsBarcode(canvas, value, {
+    format: 'CODE128',
+    width: 2,
+    height: 150,
+    displayValue: false,
+    margin: 8,
+    lineColor: '#000000',
+    background: '#ffffff',
+  });
   return canvas;
 }
 
