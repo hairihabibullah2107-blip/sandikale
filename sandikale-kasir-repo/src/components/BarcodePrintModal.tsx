@@ -62,7 +62,7 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
   );
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-3 sm:p-6">
+    <div id="barcode-print-overlay" className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-3 sm:p-6">
       <style>{`
         .barcode-print-label { box-sizing: border-box; width: ${selectedPaper.width}mm; height: ${selectedPaper.height}mm; padding: 2mm; overflow: hidden; background: #fff; color: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1mm; border: 1px dashed #ddd; break-inside: avoid; }
         .barcode-print-name { width: 100%; font: 700 9pt Arial, sans-serif; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -73,13 +73,14 @@ export const BarcodePrintModal: React.FC<Props> = ({ products, onClose }) => {
         @media print {
           @page { size: ${paper === 'A4' ? 'A4 portrait' : `${selectedPaper.width}mm ${selectedPaper.height}mm`}; margin: ${paper === 'A4' ? '8mm' : '0'}; }
           body * { visibility: hidden !important; }
-          #barcode-print-root, #barcode-print-root * { visibility: visible !important; }
-          #barcode-print-root { position: absolute !important; inset: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; background: #fff !important; padding: 0 !important; margin: 0 !important; }
+          #barcode-print-overlay, #barcode-print-root, #barcode-print-root * { visibility: visible !important; }
+          #barcode-print-overlay { position: static !important; inset: auto !important; display: block !important; padding: 0 !important; background: #fff !important; }
+          #barcode-print-root { position: static !important; inset: auto !important; width: 100% !important; max-width: none !important; max-height: none !important; height: auto !important; overflow: visible !important; background: #fff !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
           #barcode-print-root > .p-4 { padding: 0 !important; overflow: visible !important; }
           .barcode-print-controls { display: none !important; }
           .barcode-print-grid { ${paper === 'A4' ? `display: grid; grid-template-columns: repeat(3, ${selectedPaper.width}mm); gap: 1.5mm;` : 'display: block;'} }
-          ${paper === 'A4' ? '' : '.barcode-print-label { break-after: page; } .barcode-print-label:last-child { break-after: auto; }'}
-          .barcode-print-label { border: none; }
+          ${paper === 'A4' ? '' : '.barcode-print-label { break-after: page; page-break-after: always; } .barcode-print-label:last-child { break-after: auto; page-break-after: auto; }'}
+          .barcode-print-label { border: none; break-inside: avoid; page-break-inside: avoid; }
         }
       `}</style>
 
