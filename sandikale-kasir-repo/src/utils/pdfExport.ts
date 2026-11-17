@@ -526,7 +526,6 @@ export async function downloadProductionSpkPdf(
   const INK: RGB = [20, 20, 20];
 
   const now = new Date();
-  const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
   const deadlineStr = custom.deadline
     ? new Date(custom.deadline + 'T00:00:00')
         .toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -595,18 +594,18 @@ export async function downloadProductionSpkPdf(
       .join(', ') || '-';
   const cells: [string, string][][] = [
     [
-      ['BRAND', (custom.customerName || '-').toUpperCase()],
+      ['PEMESAN', (custom.customerName || '-').toUpperCase()],
+      ['NOMOR WA', custom.customerPhone || '-'],
+      ['MATERIAL', (custom.garmentType || '-').replace(/^Kaos\\s+/i, '').toUpperCase()],
+    ],
+    [
       ['COLOR', (custom.garmentColor || '-').toUpperCase()],
-      ['SIZE', sizesText],
-    ],
-    [
       ['MODEL', modelText],
-      ['DESIGNER', storeName.toUpperCase()],
-      ['SABLON', 'DTF'],
+      ['DEADLINE', deadlineStr || '-'],
     ],
     [
-      ['MATERIAL', (custom.garmentType || '-').replace(/^Kaos\s+/i, '').toUpperCase()],
-      ['DATE', dateStr],
+      ['SIZE', sizesText],
+      ['SABLON', 'DTF'],
       ['QTY', String(custom.totalPcs)],
     ],
   ];
