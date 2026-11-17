@@ -596,7 +596,7 @@ export async function downloadProductionSpkPdf(
     [
       ['PEMESAN', (custom.customerName || '-').toUpperCase()],
       ['NOMOR WA', custom.customerPhone || '-'],
-      ['MATERIAL', (custom.garmentType || '-').replace(/^Kaos\\s+/i, '').toUpperCase()],
+      ['MATERIAL', (custom.garmentType || '-').replace(/^Kaos\s+/i, '').toUpperCase()],
     ],
     [
       ['COLOR', (custom.garmentColor || '-').toUpperCase()],
